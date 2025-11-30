@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
-import { Scissors, Crown, Flame, Star, Clock, Users, Award, ChevronDown, Instagram, Facebook, MapPin, Phone, Sparkles, Zap, Target } from "lucide-react";
+import { Scissors, Crown, Flame, Star, Clock, Users, Award, ChevronDown, Instagram, Facebook, MapPin, Phone, Sparkles, Zap, Target, X, ChevronLeft, ChevronRight, Mail, Send } from "lucide-react";
 
 // Custom cursor component
 function CustomCursor() {
@@ -89,7 +89,7 @@ function Navbar() {
         </motion.div>
 
         <div className="hidden md:flex items-center gap-8">
-          {["servicios", "galeria", "nosotros"].map((item) => (
+          {["servicios", "galeria", "equipo", "contacto"].map((item) => (
             <button
               key={item}
               onClick={() => scrollToSection(item)}
@@ -500,10 +500,170 @@ function ServicesSection() {
   );
 }
 
-// Before/After Gallery Section
+// Lightbox Modal Component
+function LightboxModal({ 
+  isOpen, 
+  onClose, 
+  item, 
+  onPrev, 
+  onNext,
+  currentIndex,
+  totalItems
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  item: { id: number; style: string; before: string; after: string } | null;
+  onPrev: () => void;
+  onNext: () => void;
+  currentIndex: number;
+  totalItems: number;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onPrev();
+      if (e.key === "ArrowRight") onNext();
+    };
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose, onPrev, onNext]);
+
+  if (!item) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          onClick={onClose}
+        >
+          {/* Backdrop */}
+          <motion.div 
+            className="absolute inset-0 bg-black/95 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+
+          {/* Close button */}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={onClose}
+            className="absolute top-6 right-6 z-10 w-12 h-12 bg-white/10 hover:bg-red-600 flex items-center justify-center transition-colors"
+            data-testid="lightbox-close"
+          >
+            <X className="w-6 h-6 text-white" />
+          </motion.button>
+
+          {/* Navigation buttons */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            onClick={(e) => { e.stopPropagation(); onPrev(); }}
+            className="absolute left-4 md:left-8 z-10 w-12 h-12 bg-white/10 hover:bg-red-600 flex items-center justify-center transition-colors"
+            data-testid="lightbox-prev"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            onClick={(e) => { e.stopPropagation(); onNext(); }}
+            className="absolute right-4 md:right-8 z-10 w-12 h-12 bg-white/10 hover:bg-red-600 flex items-center justify-center transition-colors"
+            data-testid="lightbox-next"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </motion.button>
+
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl mx-4 md:mx-8"
+          >
+            {/* Main content card */}
+            <div className="bg-noir-light border border-white/10 overflow-hidden">
+              {/* Header */}
+              <div className="bg-black/50 px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <span className="text-red-500 text-sm uppercase tracking-widest font-bold">
+                    Transformación #{item.id}
+                  </span>
+                  <h3 className="font-display text-3xl md:text-4xl mt-1">{item.style}</h3>
+                </div>
+                <div className="text-white/40 text-sm">
+                  {currentIndex + 1} / {totalItems}
+                </div>
+              </div>
+
+              {/* Before/After comparison */}
+              <div className="grid grid-cols-1 md:grid-cols-2 aspect-[16/9] md:aspect-[2/1]">
+                {/* Before */}
+                <div className="relative bg-gradient-to-br from-noir-medium to-noir-soft flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10">
+                  <div className="absolute top-4 left-4 bg-black/80 px-4 py-2">
+                    <span className="text-xs uppercase tracking-widest text-white/60">Antes</span>
+                  </div>
+                  <div className="text-center p-8">
+                    <p className="text-white/60 text-lg md:text-xl">{item.before}</p>
+                  </div>
+                </div>
+
+                {/* After */}
+                <div className="relative bg-gradient-to-br from-red-900/20 to-noir-medium flex items-center justify-center">
+                  <div className="absolute top-4 left-4 bg-red-600 px-4 py-2">
+                    <span className="text-xs uppercase tracking-widest text-white font-bold">Después</span>
+                  </div>
+                  <div className="text-center p-8">
+                    <p className="text-white text-lg md:text-xl font-medium">{item.after}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer CTA */}
+              <div className="bg-black/50 px-6 py-4 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p className="text-white/50 text-sm text-center md:text-left">
+                  ¿Quieres esta transformación? Agenda tu cita ahora.
+                </p>
+                <motion.a
+                  href=""
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 text-sm uppercase tracking-widest transition-all"
+                  data-testid="lightbox-cta"
+                >
+                  Agendar Cita
+                </motion.a>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Before/After Gallery Section with Lightbox
 function GallerySection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const transformations = [
     { id: 1, style: "Fade Clásico", before: "Cabello largo y desordenado", after: "Fade impecable con textura" },
@@ -514,101 +674,126 @@ function GallerySection() {
     { id: 6, style: "Estilo Ejecutivo", before: "Descuidado para el trabajo", after: "Presencia profesional" },
   ];
 
+  const openLightbox = (index: number) => setSelectedIndex(index);
+  const closeLightbox = () => setSelectedIndex(null);
+  const goToPrev = () => setSelectedIndex(prev => prev !== null ? (prev - 1 + transformations.length) % transformations.length : null);
+  const goToNext = () => setSelectedIndex(prev => prev !== null ? (prev + 1) % transformations.length : null);
+
   return (
-    <section ref={ref} id="galeria" className="relative py-32 bg-black overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-          backgroundSize: "40px 40px",
-        }} />
-      </div>
+    <>
+      <LightboxModal
+        isOpen={selectedIndex !== null}
+        onClose={closeLightbox}
+        item={selectedIndex !== null ? transformations[selectedIndex] : null}
+        onPrev={goToPrev}
+        onNext={goToNext}
+        currentIndex={selectedIndex ?? 0}
+        totalItems={transformations.length}
+      />
 
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-20"
-        >
-          <span className="text-red-500 font-bold text-sm uppercase tracking-widest mb-4 block">
-            Resultados Reales
-          </span>
-          <h2 className="font-display text-5xl md:text-7xl tracking-tight mb-6">
-            ANTES VS <span className="text-red-500">DESPUÉS</span>
-          </h2>
-          <p className="text-white/50 max-w-2xl mx-auto text-lg">
-            La transformación habla por sí misma. Mira cómo nuestros clientes 
-            evolucionan su imagen y elevan su confianza.
-          </p>
-        </motion.div>
-
-        {/* Gallery grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {transformations.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 50 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="group relative aspect-[4/5] bg-noir-light border border-white/5 overflow-hidden cursor-pointer"
-              data-testid={`gallery-item-${item.id}`}
-            >
-              {/* Gradient placeholder for image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-noir-medium via-noir-soft to-noir-light" />
-              
-              {/* Before/After overlay effect */}
-              <div className="absolute inset-0 flex">
-                {/* Before side */}
-                <div className="w-1/2 h-full relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="text-center p-4">
-                      <span className="block text-xs uppercase tracking-widest text-white/40 mb-2">Antes</span>
-                      <p className="text-white/60 text-sm">{item.before}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Divider */}
-                <div className="w-px bg-red-500 relative z-10">
-                  <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </motion.div>
-                </div>
-                
-                {/* After side */}
-                <div className="w-1/2 h-full relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-red-900/20 flex items-center justify-center">
-                    <div className="text-center p-4">
-                      <span className="block text-xs uppercase tracking-widest text-red-500 mb-2">Después</span>
-                      <p className="text-white text-sm font-medium">{item.after}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Style label */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
-                <h3 className="font-display text-2xl text-white group-hover:text-red-500 transition-colors">
-                  {item.style}
-                </h3>
-              </div>
-
-              {/* Hover overlay */}
-              <motion.div
-                className="absolute inset-0 bg-red-600/0 group-hover:bg-red-600/10 transition-colors duration-500"
-              />
-            </motion.div>
-          ))}
+      <section ref={ref} id="galeria" className="relative py-32 bg-black overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }} />
         </div>
-      </div>
-    </section>
+
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Section header */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-20"
+          >
+            <span className="text-red-500 font-bold text-sm uppercase tracking-widest mb-4 block">
+              Resultados Reales
+            </span>
+            <h2 className="font-display text-5xl md:text-7xl tracking-tight mb-6">
+              ANTES VS <span className="text-red-500">DESPUÉS</span>
+            </h2>
+            <p className="text-white/50 max-w-2xl mx-auto text-lg">
+              La transformación habla por sí misma. Mira cómo nuestros clientes 
+              evolucionan su imagen y elevan su confianza.
+            </p>
+          </motion.div>
+
+          {/* Gallery grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {transformations.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -10 }}
+                onClick={() => openLightbox(index)}
+                className="group relative aspect-[4/5] bg-noir-light border border-white/5 overflow-hidden cursor-pointer"
+                data-testid={`gallery-item-${item.id}`}
+              >
+                {/* Gradient placeholder for image */}
+                <div className="absolute inset-0 bg-gradient-to-br from-noir-medium via-noir-soft to-noir-light" />
+                
+                {/* Before/After overlay effect */}
+                <div className="absolute inset-0 flex">
+                  {/* Before side */}
+                  <div className="w-1/2 h-full relative overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <span className="block text-xs uppercase tracking-widest text-white/40 mb-2">Antes</span>
+                        <p className="text-white/60 text-sm">{item.before}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="w-px bg-red-500 relative z-10">
+                    <motion.div
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </motion.div>
+                  </div>
+                  
+                  {/* After side */}
+                  <div className="w-1/2 h-full relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-red-900/20 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <span className="block text-xs uppercase tracking-widest text-red-500 mb-2">Después</span>
+                        <p className="text-white text-sm font-medium">{item.after}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Click to expand indicator */}
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-red-600 px-3 py-1.5 text-xs uppercase tracking-widest font-bold">
+                    Ver más
+                  </div>
+                </div>
+
+                {/* Style label */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
+                  <h3 className="font-display text-2xl text-white group-hover:text-red-500 transition-colors">
+                    {item.style}
+                  </h3>
+                </div>
+
+                {/* Hover overlay */}
+                <motion.div
+                  className="absolute inset-0 bg-red-600/0 group-hover:bg-red-600/10 transition-colors duration-500"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -753,6 +938,370 @@ function CTASection() {
   );
 }
 
+// Team Section (Equipo de Barberos)
+function TeamSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  const barbers = [
+    {
+      id: 1,
+      name: "Carlos 'El Rey' Mendez",
+      role: "Master Barber",
+      specialty: "Fades & Skin Fades",
+      experience: "12 años",
+      instagram: "@elrey_cuts",
+    },
+    {
+      id: 2,
+      name: "Miguel 'Razor' Torres",
+      role: "Senior Barber",
+      specialty: "Diseños Artísticos",
+      experience: "8 años",
+      instagram: "@razor_art",
+    },
+    {
+      id: 3,
+      name: "David 'Blade' García",
+      role: "Barba Specialist",
+      specialty: "Barbas & Afeitado Clásico",
+      experience: "10 años",
+      instagram: "@blade_barber",
+    },
+    {
+      id: 4,
+      name: "Andrés 'Flow' Ruiz",
+      role: "Style Expert",
+      specialty: "Cortes Modernos",
+      experience: "6 años",
+      instagram: "@flow_styles",
+    },
+  ];
+
+  return (
+    <section ref={ref} id="equipo" className="relative py-32 bg-noir-light overflow-hidden">
+      {/* Background accents */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+      <div className="absolute -top-32 -right-32 w-64 h-64 bg-red-600/5 rounded-full blur-3xl" />
+
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Section header */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
+        >
+          <span className="text-red-500 font-bold text-sm uppercase tracking-widest mb-4 block">
+            Nuestro Equipo
+          </span>
+          <h2 className="font-display text-5xl md:text-7xl tracking-tight mb-6">
+            ARTISTAS DEL <span className="text-red-500">ESTILO</span>
+          </h2>
+          <p className="text-white/50 max-w-2xl mx-auto text-lg">
+            Cada barbero es un maestro en su arte. Conoce a los expertos 
+            que harán realidad tu visión.
+          </p>
+        </motion.div>
+
+        {/* Team grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {barbers.map((barber, index) => (
+            <motion.div
+              key={barber.id}
+              initial={{ opacity: 0, y: 50 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: index * 0.15 }}
+              whileHover={{ y: -10 }}
+              className="group relative bg-black border border-white/5 overflow-hidden"
+              data-testid={`team-member-${barber.id}`}
+            >
+              {/* Avatar placeholder */}
+              <div className="aspect-square bg-gradient-to-br from-noir-medium via-noir-soft to-red-900/20 relative overflow-hidden">
+                {/* Initials as placeholder */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-display text-6xl text-white/10 group-hover:text-red-500/30 transition-colors">
+                    {barber.name.split(" ")[0][0]}{barber.name.split(" ").slice(-1)[0][0]}
+                  </span>
+                </div>
+                
+                {/* Experience badge */}
+                <div className="absolute top-4 right-4 bg-red-600 px-3 py-1">
+                  <span className="text-xs font-bold uppercase tracking-wider">{barber.experience}</span>
+                </div>
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-red-600/0 group-hover:bg-red-600/20 transition-colors duration-500" />
+              </div>
+
+              {/* Info */}
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="font-display text-xl tracking-wide group-hover:text-red-500 transition-colors">
+                    {barber.name}
+                  </h3>
+                  <p className="text-red-500 text-sm font-bold uppercase tracking-wider mt-1">
+                    {barber.role}
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-white/50">
+                    <Scissors className="w-4 h-4 text-red-500" />
+                    <span>{barber.specialty}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/50">
+                    <Instagram className="w-4 h-4 text-red-500" />
+                    <span>{barber.instagram}</span>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <motion.a
+                  href=""
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-6 block w-full bg-white/5 hover:bg-red-600 text-center py-3 text-sm uppercase tracking-widest font-bold transition-colors"
+                  data-testid={`book-barber-${barber.id}`}
+                >
+                  Reservar con {barber.name.split(" ")[0]}
+                </motion.a>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Contact Form Section
+function ContactSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate form submission
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+      setFormData({ name: "", email: "", phone: "", message: "" });
+      
+      // Reset after 3 seconds
+      setTimeout(() => setSubmitted(false), 3000);
+    }, 1000);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  return (
+    <section ref={ref} id="contacto" className="relative py-32 bg-black overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `linear-gradient(45deg, transparent 45%, rgba(255,0,0,0.1) 45%, rgba(255,0,0,0.1) 55%, transparent 55%)`,
+          backgroundSize: "20px 20px",
+        }} />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Left side - Info */}
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-red-500 font-bold text-sm uppercase tracking-widest mb-4 block">
+              Contáctanos
+            </span>
+            <h2 className="font-display text-5xl md:text-6xl tracking-tight mb-6">
+              ¿TIENES<br />
+              <span className="text-red-500">PREGUNTAS?</span>
+            </h2>
+            <p className="text-white/50 text-lg mb-8">
+              Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos 
+              lo antes posible. También puedes visitarnos o llamarnos directamente.
+            </p>
+
+            {/* Contact info cards */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 bg-noir-light p-4 border border-white/5">
+                <div className="w-12 h-12 bg-red-600/20 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold">Ubicación</p>
+                  <p className="text-white/50 text-sm">Calle Principal #123, Ciudad</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-noir-light p-4 border border-white/5">
+                <div className="w-12 h-12 bg-red-600/20 flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold">Teléfono</p>
+                  <p className="text-white/50 text-sm">+1 234 567 890</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-noir-light p-4 border border-white/5">
+                <div className="w-12 h-12 bg-red-600/20 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold">Email</p>
+                  <p className="text-white/50 text-sm">info@bladekings.com</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right side - Form */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-noir-light border border-white/10 p-8"
+          >
+            <AnimatePresence mode="wait">
+              {submitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="text-center py-12"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", damping: 10 }}
+                    className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-6"
+                  >
+                    <Send className="w-8 h-8 text-white" />
+                  </motion.div>
+                  <h3 className="font-display text-3xl mb-2">¡MENSAJE ENVIADO!</h3>
+                  <p className="text-white/50">Te contactaremos pronto.</p>
+                </motion.div>
+              ) : (
+                <motion.form
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-6"
+                >
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest text-white/60 mb-2">
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
+                      placeholder="Tu nombre"
+                      data-testid="contact-name"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-white/60 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="w-full bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
+                        placeholder="tu@email.com"
+                        data-testid="contact-email"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-white/60 mb-2">
+                        Teléfono
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
+                        placeholder="+1 234 567 890"
+                        data-testid="contact-phone"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest text-white/60 mb-2">
+                      Mensaje
+                    </label>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
+                      rows={4}
+                      className="w-full bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors resize-none"
+                      placeholder="¿En qué podemos ayudarte?"
+                      data-testid="contact-message"
+                    />
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-800 disabled:cursor-not-allowed text-white font-bold py-4 text-lg uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                    data-testid="contact-submit"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Enviar Mensaje
+                      </>
+                    )}
+                  </motion.button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Footer
 function Footer() {
   return (
@@ -838,6 +1387,8 @@ function LandingPage() {
       <ValueProposition />
       <ServicesSection />
       <GallerySection />
+      <TeamSection />
+      <ContactSection />
       <CTASection />
       <Footer />
     </div>
