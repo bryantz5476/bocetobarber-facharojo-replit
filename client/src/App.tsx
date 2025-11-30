@@ -1381,7 +1381,6 @@ function Footer() {
 function LandingPage() {
   return (
     <div className="relative">
-      <CustomCursor />
       <Navbar />
       <HeroSection />
       <ValueProposition />
