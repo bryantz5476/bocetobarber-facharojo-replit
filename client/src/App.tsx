@@ -121,6 +121,7 @@ function HeroSection() {
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
+    layoutEffect: false,
   });
 
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
